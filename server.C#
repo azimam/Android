@@ -1,0 +1,34 @@
+ SERVER SCRIPT
+///***********************************************************************
+/// Server
+/// Receive data from Android and send it to Matlab client
+/// Provide network access
+/// Last Modified - 10/15/2013 – A.Motaghi
+///***********************************************************************
+TcpListener tcpserver = new TcpListener(IPAddress.Any, 5000);
+tcpserver.Start();
+Console.WriteLine("Please run matlab client...");
+Socket matlabClient = tcpserver.AcceptSocket();
+Console.WriteLine("Successfully connected to matlab client");
+Console.WriteLine("Pleade run android client...");
+while (true)
+{
+ Socket androidClient = tcpserver.AcceptSocket();
+ byte[] buffer = new byte[4];
+ androidClient.Receive(buffer);
+ int left = buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3];
+ androidClient.Receive(buffer);
+ int top = buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3];
+82
+ if (left != 0 || top != 0)
+ {
+ Console.WriteLine("left={0},top={1}", left, top);
+ byte[] leftByte = BitConverter.GetBytes(left);
+ byte[] topByte = BitConverter.GetBytes(top);
+ buffer = new byte[8];
+ leftByte.CopyTo(buffer, 0);
+ topByte.CopyTo(buffer, 4);
+ matlabClient.Send(buffer);
+ Console.WriteLine("Send data To matlab client...");
+ }
+}
